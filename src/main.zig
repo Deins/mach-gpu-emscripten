@@ -27,6 +27,7 @@ pub usingnamespace @import("texture.zig");
 pub usingnamespace @import("texture_view.zig");
 
 pub const dawn = @import("dawn.zig");
+pub const emscripten = @import("emscripten_impl.zig");
 
 pub usingnamespace @import("types.zig");
 pub usingnamespace @import("interface.zig");

@@ -6,6 +6,8 @@ const Buffer = @import("buffer.zig").Buffer;
 const ShaderModule = @import("shader_module.zig").ShaderModule;
 const QuerySet = @import("query_set.zig").QuerySet;
 const Surface = @import("surface.zig").Surface;
+// TODO: better way to detect emscripten
+const is_emscripten = @import("builtin").target.cpu.arch == .wasm32 or @import("builtin").target.cpu.arch == .wasm64;
 
 pub const array_layer_count_undef = 0xffffffff;
 pub const copy_stride_undef = 0xffffffff;
@@ -25,7 +27,21 @@ pub const ComputePassTimestampWrite = extern struct {
     location: ComputePassTimestampLocation,
 };
 
-pub const RenderPassDepthStencilAttachment = extern struct {
+pub const RenderPassDepthStencilAttachment = if (is_emscripten) extern struct {
+    view: *TextureView,
+    depth_load_op: LoadOp = .undef,
+    depth_store_op: StoreOp = .undef,
+    /// deprecated
+    //clear_depth: f32 = std.math.nan(f32),
+    depth_clear_value: f32 = 0,
+    depth_read_only: bool = false,
+    stencil_load_op: LoadOp = .undef,
+    stencil_store_op: StoreOp = .undef,
+    /// deprecated
+    //clear_stencil: u32 = 0,
+    stencil_clear_value: u32 = 0,
+    stencil_read_only: bool = false,
+} else extern struct {
     view: *TextureView,
     depth_load_op: LoadOp = .undef,
     depth_store_op: StoreOp = .undef,
@@ -687,7 +703,14 @@ pub const ProgrammableStageDescriptor = extern struct {
     }
 };
 
-pub const RenderPassColorAttachment = extern struct {
+pub const RenderPassColorAttachment = if (is_emscripten) extern struct {
+    view: ?*TextureView = null,
+    resolve_target: ?*TextureView = null,
+    load_op: LoadOp,
+    store_op: StoreOp,
+    // removed deprecated clear_color
+    clear_value: Color,
+} else extern struct {
     view: ?*TextureView = null,
     resolve_target: ?*TextureView = null,
     load_op: LoadOp,
