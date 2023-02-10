@@ -12,10 +12,10 @@ pub const c = @cImport({
 // Emscripten at time of writing doesn't support instance/device creation,
 // but it expects that JS will preinitialize the device/instance.
 // However for functions that have device argument it expects that 0 will be used.
-// Zig bindings doesn't allow zero pointer to be used as *gpu.Instance. 
+// Zig bindings doesn't allow zero pointer to be used as *gpu.Instance.
 // So currently to avoid switching instance API to `*allowzero gpu.Instance`
 // we just hardcode the instance id in all functions to 0
-inline fn getInstance(instance :  *gpu.Instance) c.WGPUInstance {
+inline fn getInstance(instance: *gpu.Instance) c.WGPUInstance {
     // TODO: once createDevice gets implemented, replace with:
     //return instance;
     _ = instance;
@@ -40,30 +40,33 @@ pub const Interface = struct {
     /////////////////////////////////////////////////////////////////////////////////////////////////////
 
     pub fn init() void {
+        if (!device_ready) {
+            std.log.warn("preinitializedWebGPUDeviceReady() has not been called. If Module['preinitializedWebGPUDevice'] was not setup, webgpu commands will fail!", .{});
+        }
         // TODO: review if adapterCreateDevice gets implemented in emscripten
         // or find nicer ways to do this
-        var counter: u32 = 0;
-        while (!device_ready) {
-            if (builtin.mode == .Debug) {
-                counter += 1;
-                if (counter % 10 == 0) std.log.info("waiting for js to preinitialize webgpu device...", .{});
-                if (counter % 200 == 0) {
-                    std.log.err(
-                        \\waiting for webgpu context takes longer than it should... 
-                        \\Have you forgotten to initialize:
-                        \\Module['preinitializedWebGPUDevice'] = ...
-                        \\ and call 
-                        \\Module._preinitializedWebGPUDeviceReady()
-                        \\ from JavaScript?!?
-                    , .{});
-                }
-            }
-            c.emscripten_sleep(10); // WARN: requires -sASYNCIFY
-        }
+        // var counter: u32 = 0;
+        // while (!device_ready) {
+        //     if (builtin.mode == .Debug) {
+        //         counter += 1;
+        //         if (counter % 10 == 0) std.log.info("waiting for js to preinitialize webgpu device...", .{});
+        //         if (counter % 200 == 0) {
+        //             std.log.err(
+        //                 \\waiting for webgpu context takes longer than it should...
+        //                 \\Have you forgotten to initialize:
+        //                 \\Module['preinitializedWebGPUDevice'] = ...
+        //                 \\ and call
+        //                 \\Module._preinitializedWebGPUDeviceReady()
+        //                 \\ from JavaScript?!?
+        //             , .{});
+        //         }
+        //     }
+        //     c.emscripten_sleep(10); // WARN: requires -sASYNCIFY
+        // }
     }
 
     pub inline fn createInstance(descriptor: ?*const gpu.Instance.Descriptor) ?*gpu.Instance {
-        // TODO: not implemented by emscripten at the moment, once implemented switch to: 
+        // TODO: not implemented by emscripten at the moment, once implemented switch to:
         // return @ptrCast(?*gpu.Instance, c.wgpuCreateInstance(
         //     @ptrCast(?*const c.WGPUInstanceDescriptor, descriptor),
         // ));
